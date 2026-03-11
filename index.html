@@ -31,10 +31,19 @@
     }
 
     .add-btn { background: #2ecc71; color: white; }
+    .team-btn { background: #1abc9c; color: white; }
+    .teams-count-btn { background: #34495e; color: white; }
     .start { background: #3498db; color: white; }
     .pause { background: #f39c12; color: white; }
     .reset { background: #9b59b6; color: white; }
     .delete { background: #e74c3c; color: white; }
+
+    .left-controls {
+      position: fixed;
+      left: 20px;
+      top: 110px;
+      z-index: 10;
+    }
 
     .grid {
       display: grid;
@@ -69,14 +78,19 @@
   <h1>Chrono - Pratiques Sportives</h1>
 
   <div class="top-bar">
-    <div></div>
+    <button class="team-btn" onclick="chooseTeam()">Choix d'équipe</button>
     <button class="add-btn" onclick="addPractice()">+ Ajouter une pratique</button>
+  </div>
+
+  <div class="left-controls">
+    <button class="teams-count-btn" onclick="chooseTeamCount()">Choix du nombre d'équipes</button>
   </div>
 
   <div class="grid" id="practiceContainer"></div>
 
   <script>
     let practices = [];
+    let teamCount = 6;
 
     function formatTime(seconds) {
       const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
@@ -123,6 +137,39 @@
     function removePractice(id) {
       practices = practices.filter(p => p.id !== id);
       render();
+    }
+
+    function chooseTeam() {
+      const teamChoices = Array.from({ length: teamCount }, (_, index) => `Équipe ${index + 1}`);
+
+      const choice = prompt(
+        `Choisis une équipe (1 à ${teamCount}):\n${teamChoices.map((team, index) => `${index + 1}. ${team}`).join('\n')}`,
+        '1'
+      );
+
+      if (choice === null) return;
+
+      const index = Number(choice.trim()) - 1;
+      if (!Number.isInteger(index) || index < 0 || index >= teamChoices.length) {
+        alert(`Choix invalide. Merci de saisir un numéro entre 1 et ${teamCount}.`);
+        return;
+      }
+
+      alert(`Équipe sélectionnée : ${teamChoices[index]}`);
+    }
+
+    function chooseTeamCount() {
+      const input = prompt("Choisis le nombre d'équipes (1 à 6) :", String(teamCount));
+      if (input === null) return;
+
+      const count = Number(input.trim());
+      if (!Number.isInteger(count) || count < 1 || count > 6) {
+        alert('Choix invalide. Merci de saisir un nombre entier entre 1 et 6.');
+        return;
+      }
+
+      teamCount = count;
+      alert(`Nombre d'équipes défini à ${teamCount}.`);
     }
 
     function addPractice() {
