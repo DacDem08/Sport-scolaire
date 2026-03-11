@@ -19,7 +19,16 @@
     .top-bar {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .team-status {
+      margin: 0;
+      font-weight: bold;
+      color: #2c3e50;
     }
 
     button {
@@ -31,10 +40,33 @@
     }
 
     .add-btn { background: #2ecc71; color: white; }
+    .team-btn { background: #1abc9c; color: white; }
+    .teams-count-btn { background: #34495e; color: white; }
     .start { background: #3498db; color: white; }
     .pause { background: #f39c12; color: white; }
     .reset { background: #9b59b6; color: white; }
     .delete { background: #e74c3c; color: white; }
+
+    .left-controls {
+      position: fixed;
+      left: 20px;
+      top: 110px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .team-count-status {
+      margin: 0;
+      color: #34495e;
+      font-size: 14px;
+      font-weight: bold;
+      background: #ecf0f1;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
 
     .grid {
       display: grid;
@@ -50,6 +82,12 @@
       text-align: center;
     }
 
+    .team-label {
+      margin: 0;
+      color: #16a085;
+      font-weight: bold;
+    }
+
     .time {
       font-size: 28px;
       margin: 15px 0;
@@ -62,6 +100,13 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+
+    @media (max-width: 768px) {
+      .left-controls {
+        position: static;
+        margin-bottom: 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -69,14 +114,22 @@
   <h1>Chrono - Pratiques Sportives</h1>
 
   <div class="top-bar">
-    <div></div>
+    <button class="team-btn" onclick="chooseTeam()">Choix d'équipe</button>
+    <p class="team-status" id="teamStatus">Aucune équipe sélectionnée</p>
     <button class="add-btn" onclick="addPractice()">+ Ajouter une pratique</button>
+  </div>
+
+  <div class="left-controls">
+    <button class="teams-count-btn" onclick="chooseTeamCount()">Choix du nombre d'équipes</button>
+    <p class="team-count-status" id="teamCountStatus">Nombre d'équipes : 6</p>
   </div>
 
   <div class="grid" id="practiceContainer"></div>
 
   <script>
     let practices = [];
+    let teamCount = 6;
+    let selectedTeam = null;
 
     function formatTime(seconds) {
       const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
@@ -85,16 +138,24 @@
       return `${h}:${m}:${s}`;
     }
 
+    function updateTeamStatus() {
+      const teamStatus = document.getElementById('teamStatus');
+      const countStatus = document.getElementById('teamCountStatus');
+      teamStatus.textContent = selectedTeam ? `Équipe sélectionnée : ${selectedTeam}` : 'Aucune équipe sélectionnée';
+      countStatus.textContent = `Nombre d'équipes : ${teamCount}`;
+    }
+
     function render() {
       const container = document.getElementById('practiceContainer');
       container.innerHTML = '';
 
-      practices.forEach(p => {
+      practices.forEach((p) => {
         const card = document.createElement('div');
         card.className = 'card';
 
         card.innerHTML = `
           <h2>${p.name}</h2>
+          <p class="team-label">${p.team}</p>
           <div class="time" id="time-${p.id}">${formatTime(p.time)}</div>
           <div class="btn-group">
             <button class="start" onclick="toggle(${p.id})">${p.active ? 'Pause' : 'Démarrer'}</button>
@@ -108,30 +169,79 @@
     }
 
     function toggle(id) {
-      const practice = practices.find(p => p.id === id);
+      const practice = practices.find((p) => p.id === id);
+      if (!practice) return;
       practice.active = !practice.active;
       render();
     }
 
     function reset(id) {
-      const practice = practices.find(p => p.id === id);
+      const practice = practices.find((p) => p.id === id);
+      if (!practice) return;
       practice.time = 0;
       practice.active = false;
       render();
     }
 
     function removePractice(id) {
-      practices = practices.filter(p => p.id !== id);
+      practices = practices.filter((p) => p.id !== id);
       render();
     }
 
+    function chooseTeam() {
+      const teamChoices = Array.from({ length: teamCount }, (_, index) => `Équipe ${index + 1}`);
+      const choice = prompt(
+        `Choisis une équipe (1 à ${teamCount}):\n${teamChoices.map((team, index) => `${index + 1}. ${team}`).join('\n')}`,
+        '1'
+      );
+
+      if (choice === null) return;
+
+      const index = Number(choice.trim()) - 1;
+      if (!Number.isInteger(index) || index < 0 || index >= teamChoices.length) {
+        alert(`Choix invalide. Merci de saisir un numéro entre 1 et ${teamCount}.`);
+        return;
+      }
+
+      selectedTeam = teamChoices[index];
+      updateTeamStatus();
+    }
+
+    function chooseTeamCount() {
+      const input = prompt("Choisis le nombre d'équipes (1 à 6) :", String(teamCount));
+      if (input === null) return;
+
+      const count = Number(input.trim());
+      if (!Number.isInteger(count) || count < 1 || count > 6) {
+        alert('Choix invalide. Merci de saisir un nombre entier entre 1 et 6.');
+        return;
+      }
+
+      teamCount = count;
+
+      if (selectedTeam) {
+        const selectedIndex = Number(selectedTeam.replace('Équipe ', ''));
+        if (!Number.isInteger(selectedIndex) || selectedIndex > teamCount || selectedIndex < 1) {
+          selectedTeam = null;
+        }
+      }
+
+      updateTeamStatus();
+    }
+
     function addPractice() {
+      if (!selectedTeam) {
+        alert("Sélectionne d'abord une équipe.");
+        return;
+      }
+
       const name = prompt('Nom de la pratique sportive :');
-      if (!name) return;
+      if (!name || !name.trim()) return;
 
       practices.push({
-        id: Date.now(),
-        name,
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name.trim(),
+        team: selectedTeam,
         time: 0,
         active: false
       });
@@ -140,7 +250,7 @@
     }
 
     setInterval(() => {
-      practices.forEach(p => {
+      practices.forEach((p) => {
         if (p.active) {
           p.time++;
           const timeElement = document.getElementById(`time-${p.id}`);
@@ -151,6 +261,7 @@
       });
     }, 1000);
 
+    updateTeamStatus();
     render();
   </script>
 
