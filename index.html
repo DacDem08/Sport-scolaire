@@ -19,7 +19,15 @@
     .top-bar {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 20px;
+    }
+
+    .team-status {
+      margin: 0;
+      font-weight: bold;
+      color: #2c3e50;
     }
 
     button {
@@ -79,6 +87,7 @@
 
   <div class="top-bar">
     <button class="team-btn" onclick="chooseTeam()">Choix d'équipe</button>
+    <p class="team-status" id="teamStatus">Aucune équipe sélectionnée</p>
     <button class="add-btn" onclick="addPractice()">+ Ajouter une pratique</button>
   </div>
 
@@ -91,12 +100,18 @@
   <script>
     let practices = [];
     let teamCount = 6;
+    let selectedTeam = null;
 
     function formatTime(seconds) {
       const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
       const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
       const s = String(seconds % 60).padStart(2, '0');
       return `${h}:${m}:${s}`;
+    }
+
+    function updateTeamStatus() {
+      const status = document.getElementById('teamStatus');
+      status.textContent = selectedTeam ? `Équipe sélectionnée : ${selectedTeam}` : 'Aucune équipe sélectionnée';
     }
 
     function render() {
@@ -123,12 +138,14 @@
 
     function toggle(id) {
       const practice = practices.find(p => p.id === id);
+      if (!practice) return;
       practice.active = !practice.active;
       render();
     }
 
     function reset(id) {
       const practice = practices.find(p => p.id === id);
+      if (!practice) return;
       practice.time = 0;
       practice.active = false;
       render();
@@ -155,7 +172,9 @@
         return;
       }
 
-      alert(`Équipe sélectionnée : ${teamChoices[index]}`);
+      selectedTeam = teamChoices[index];
+      updateTeamStatus();
+      alert(`Équipe sélectionnée : ${selectedTeam}`);
     }
 
     function chooseTeamCount() {
@@ -169,16 +188,25 @@
       }
 
       teamCount = count;
+
+      if (selectedTeam) {
+        const selectedIndex = Number(selectedTeam.replace('Équipe ', ''));
+        if (!Number.isInteger(selectedIndex) || selectedIndex > teamCount || selectedIndex < 1) {
+          selectedTeam = null;
+          updateTeamStatus();
+        }
+      }
+
       alert(`Nombre d'équipes défini à ${teamCount}.`);
     }
 
     function addPractice() {
       const name = prompt('Nom de la pratique sportive :');
-      if (!name) return;
+      if (!name || !name.trim()) return;
 
       practices.push({
-        id: Date.now(),
-        name,
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name.trim(),
         time: 0,
         active: false
       });
@@ -198,6 +226,7 @@
       });
     }, 1000);
 
+    updateTeamStatus();
     render();
   </script>
 
